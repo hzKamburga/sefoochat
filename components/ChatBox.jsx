@@ -121,19 +121,20 @@ const ChatBox = ({ catState, onCatMoodChange }) => {
     aiService.clearHistory()
   }
 
-  // AI'dan otomatik durum değişimi iste
+  // AI'dan otomatik durum değişimi iste (rate limited)
   const requestAIMoodChange = async () => {
     try {
-      const response = await aiService.getCatResponse("Nasıl hissediyorsun şu anda?")
+      // Sadece mood değişimi için, mesaj göndermeden
+      const currentMood = aiService.getCurrentMood()
+      const moods = ['sitting', 'walking', 'sleeping', 'loving']
+      const randomMood = moods[Math.floor(Math.random() * moods.length)]
       
-      if (response.success && response.mood) {
-        if (window.catMessageTrigger) {
-          window.catMessageTrigger(response.mood)
-        }
-        
-        if (onCatMoodChange) {
-          onCatMoodChange(response.mood)
-        }
+      if (window.catMessageTrigger) {
+        window.catMessageTrigger(randomMood)
+      }
+      
+      if (onCatMoodChange) {
+        onCatMoodChange(randomMood)
       }
     } catch (error) {
       console.log('Otomatik durum değişimi hatası:', error)

@@ -7,6 +7,10 @@ class AIService {
   constructor() {
     this.messageHistory = []
     this.currentMood = 'sitting'
+    this.lastRequestTime = 0
+    this.requestCooldown = 3000 // 3 saniye cooldown
+    this.discordCooldown = 10000 // 10 saniye Discord cooldown
+    this.lastDiscordTime = 0
     this.axiosInstance = axios.create({
       baseURL: BASE_URL,
       headers: {
@@ -104,9 +108,17 @@ class AIService {
     return 'sitting'
   }
 
-  // Discord webhook'una mesaj gönder
+  // Discord webhook'una mesaj gönder (rate limited)
   async sendToDiscord(userMessage, aiResponse) {
     try {
+      const now = Date.now()
+      
+      // Discord cooldown kontrolü
+      if (now - this.lastDiscordTime < this.discordCooldown) {
+        console.log('Discord cooldown aktif, mesaj gönderilmedi')
+        return
+      }
+
       const webhookUrl = 'https://discord.com/api/webhooks/1405158668059807844/AMgEEHIjleDkGIBqo8P1iYMlUBH6Iy89FoVaK87b7Ll6Nuj4cHXEQlU1vBop4UkHdzHF'
 
       const discordMessage = {
@@ -121,6 +133,7 @@ class AIService {
         }
       })
 
+      this.lastDiscordTime = now
       console.log('Discord\'a mesaj gönderildi')
     } catch (error) {
       console.error('Discord webhook hatası:', error)
@@ -130,6 +143,20 @@ class AIService {
   // AI'dan cevap al
   async getCatResponse(userMessage) {
     try {
+      const now = Date.now()
+      
+      // Rate limiting kontrolü
+      if (now - this.lastRequestTime < this.requestCooldown) {
+        return {
+          message: 'Miyav! Biraz yavaş konuş, çok hızlı geliyorsun! 😸',
+          mood: this.currentMood,
+          success: false,
+          rateLimited: true
+        }
+      }
+
+      this.lastRequestTime = now
+
       // Kullanıcı mesajını geçmişe ekle
       this.addToHistory('user', userMessage)
 
@@ -189,8 +216,10 @@ class AIService {
       // AI cevabını geçmişe ekle
       this.addToHistory('assistant', aiResponse)
 
-      // Discord'a gönder
-      await this.sendToDiscord(userMessage, aiResponse)
+      // Discord'a gönder (sadece önemli mesajlarda)
+      if (userMessage.length > 10 && !userMessage.includes('Nasıl hissediyorsun')) {
+        await this.sendToDiscord(userMessage, aiResponse)
+      }
 
       // Kedi durumunu belirle
       const newMood = this.determineCatMood(userMessage, aiResponse)

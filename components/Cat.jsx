@@ -129,17 +129,21 @@ const Cat = ({ onStateChange }) => {
         }
     }
 
-    // AI otomatik durum değişimi
+    // Otomatik durum değişimi (AI olmadan)
     const scheduleNextStateChange = () => {
         if (stateTimerRef.current) {
             clearTimeout(stateTimerRef.current)
         }
 
-        const delay = 6000 + Math.random() * 6000 // 6-12 saniye arası
+        const delay = 15000 + Math.random() * 15000 // 15-30 saniye arası (daha uzun)
         stateTimerRef.current = setTimeout(() => {
-            // AI'dan otomatik durum değişimi iste
-            if (window.requestAIMoodChange) {
-                window.requestAIMoodChange()
+            // Sadece lokal durum değişimi, AI çağırma
+            if (!aiControlled) {
+                const states = ['sitting', 'walking', 'sleeping', 'loving']
+                const currentIndex = states.indexOf(catState)
+                const availableStates = states.filter((_, index) => index !== currentIndex)
+                const randomState = availableStates[Math.floor(Math.random() * availableStates.length)]
+                changeState(randomState)
             }
             scheduleNextStateChange()
         }, delay)
