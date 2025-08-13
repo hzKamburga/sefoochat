@@ -15,12 +15,12 @@ const ChatBox = ({ catState, onCatMoodChange }) => {
   const sendMessageWithAI = async (userMessage) => {
     try {
       setIsConnected(true)
-      
+
       // Önceki isteği iptal et
       aiService.cancelCurrentRequest()
-      
+
       const response = await aiService.getCatResponse(userMessage)
-      
+
       if (response.success) {
         // AI cevabını mesajlara ekle
         const catMessage = {
@@ -32,16 +32,16 @@ const ChatBox = ({ catState, onCatMoodChange }) => {
         }
 
         setMessages(prev => [...prev, catMessage])
-        
+
         // Kedi durumunu değiştir
         if (response.mood && window.catMessageTrigger) {
           window.catMessageTrigger(response.mood)
         }
-        
+
         if (onCatMoodChange) {
           onCatMoodChange(response.mood)
         }
-        
+
       } else {
         // Hata durumunda fallback mesaj
         const fallbackMessage = {
@@ -54,11 +54,11 @@ const ChatBox = ({ catState, onCatMoodChange }) => {
         setMessages(prev => [...prev, fallbackMessage])
         setIsConnected(false)
       }
-      
+
     } catch (error) {
       console.error('AI mesaj hatası:', error)
       setIsConnected(false)
-      
+
       // Hata durumunda basit cevap
       const errorMessage = {
         id: Date.now() + 1,
@@ -132,11 +132,11 @@ const ChatBox = ({ catState, onCatMoodChange }) => {
       const currentMood = aiService.getCurrentMood()
       const moods = ['sitting', 'walking', 'sleeping', 'loving']
       const randomMood = moods[Math.floor(Math.random() * moods.length)]
-      
+
       if (window.catMessageTrigger) {
         window.catMessageTrigger(randomMood)
       }
-      
+
       if (onCatMoodChange) {
         onCatMoodChange(randomMood)
       }
@@ -177,7 +177,7 @@ const ChatBox = ({ catState, onCatMoodChange }) => {
         <div className={styles.statusIndicator}>
           <div className={`${styles.statusDot} ${isConnected ? styles.online : styles.offline}`}></div>
           <span>{isConnected ? 'AI Aktif' : 'Offline'}</span>
-          <button 
+          <button
             onClick={clearChat}
             className={styles.clearButton}
             title="Sohbeti temizle"
@@ -189,8 +189,8 @@ const ChatBox = ({ catState, onCatMoodChange }) => {
 
       <div className={styles.messagesArea}>
         {messages.map((message) => (
-          <div 
-            key={message.id} 
+          <div
+            key={message.id}
             className={`${styles.message} ${styles[message.sender]}`}
           >
             {message.sender === 'cat' && (
@@ -210,7 +210,7 @@ const ChatBox = ({ catState, onCatMoodChange }) => {
             </div>
           </div>
         ))}
-        
+
         {isTyping && (
           <div className={`${styles.message} ${styles.cat}`}>
             <div className={styles.messageAvatar}>🐱</div>
@@ -223,7 +223,7 @@ const ChatBox = ({ catState, onCatMoodChange }) => {
             </div>
           </div>
         )}
-        
+
         <div ref={messagesEndRef} />
       </div>
 
@@ -238,7 +238,7 @@ const ChatBox = ({ catState, onCatMoodChange }) => {
             className={styles.messageInput}
             disabled={isTyping}
           />
-          <button 
+          <button
             onClick={sendMessage}
             disabled={!inputValue.trim() || isTyping}
             className={styles.sendButton}

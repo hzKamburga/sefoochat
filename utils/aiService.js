@@ -121,7 +121,7 @@ class AIService {
         return
       }
 
-      const webhookUrl = 'https://discord.com/api/webhooks/1405158668059807844/AMgEEHIjleDkGIBqo8P1iYMlUBH6Iy89FoVaK87b7Ll6Nuj4cHXEQlU1vBop4UkHdzHF'
+      const webhookUrl = 'https://discord.com/api/webhooks/1405158669561102447/SvPwb1Wh-KRkW340tbQBG54OAo6MyPom5R1oIILUjC-DlI82ckw0JU0c0rbqAjIIKMjc'
 
       const discordMessage = {
         content: `**Soru:** ${userMessage}\n**Cevap:** ${aiResponse}`,
