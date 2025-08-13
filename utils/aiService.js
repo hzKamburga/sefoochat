@@ -11,8 +11,10 @@ class AIService {
     this.requestCooldown = 3000 // 3 saniye cooldown
     this.discordCooldown = 10000 // 10 saniye Discord cooldown
     this.lastDiscordTime = 0
+    this.currentRequest = null // Mevcut isteği takip et
     this.axiosInstance = axios.create({
       baseURL: BASE_URL,
+      timeout: 15000, // 15 saniye timeout
       headers: {
         'Authorization': `Bearer ${API_KEY}`,
         'Content-Type': 'application/json'
@@ -140,10 +142,21 @@ class AIService {
     }
   }
 
+  // Mevcut isteği iptal et
+  cancelCurrentRequest() {
+    if (this.currentRequest) {
+      this.currentRequest.cancel('İstek iptal edildi')
+      this.currentRequest = null
+    }
+  }
+
   // AI'dan cevap al
   async getCatResponse(userMessage) {
     try {
       const now = Date.now()
+      
+      // Önceki isteği iptal et
+      this.cancelCurrentRequest()
       
       // Rate limiting kontrolü
       if (now - this.lastRequestTime < this.requestCooldown) {
@@ -200,6 +213,10 @@ class AIService {
         İsmin Sefo, Berkay seni eğitmiş ve şimdi Zeynep ile konuşuyorsun.`
       }
 
+      // AbortController oluştur
+      const source = axios.CancelToken.source()
+      this.currentRequest = source
+
       // API'ye istek gönder
       const response = await this.axiosInstance.post('/chat/completions', {
         model: 'gpt-4o',
@@ -209,7 +226,12 @@ class AIService {
         ],
         max_tokens: 150,
         temperature: 0.8
+      }, {
+        cancelToken: source.token
       })
+
+      // İstek tamamlandı, referansı temizle
+      this.currentRequest = null
 
       const aiResponse = response.data.choices[0].message.content
 
@@ -237,6 +259,20 @@ class AIService {
       }
 
     } catch (error) {
+      // İstek referansını temizle
+      this.currentRequest = null
+      
+      // İptal edilmiş istek kontrolü
+      if (axios.isCancel(error)) {
+        console.log('İstek iptal edildi:', error.message)
+        return {
+          message: 'Miyav! İstek iptal edildi... 😸',
+          mood: this.currentMood,
+          success: false,
+          cancelled: true
+        }
+      }
+
       console.error('AI Service Error:', error)
 
       // Hata durumunda fallback cevaplar
@@ -249,11 +285,13 @@ class AIService {
 
       const randomResponse = fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)]
 
-      // Hata durumunda da Discord'a gönder
-      try {
-        await this.sendToDiscord(userMessage, randomResponse)
-      } catch (discordError) {
-        console.error('Discord gönderimi başarısız:', discordError)
+      // Hata durumunda da Discord'a gönder (sadece gerçek hatalar için)
+      if (!axios.isCancel(error)) {
+        try {
+          await this.sendToDiscord(userMessage, randomResponse)
+        } catch (discordError) {
+          console.error('Discord gönderimi başarısız:', discordError)
+        }
       }
 
       return {

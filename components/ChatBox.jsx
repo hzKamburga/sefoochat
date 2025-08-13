@@ -15,6 +15,10 @@ const ChatBox = ({ catState, onCatMoodChange }) => {
   const sendMessageWithAI = async (userMessage) => {
     try {
       setIsConnected(true)
+      
+      // Önceki isteği iptal et
+      aiService.cancelCurrentRequest()
+      
       const response = await aiService.getCatResponse(userMessage)
       
       if (response.success) {
@@ -145,6 +149,13 @@ const ChatBox = ({ catState, onCatMoodChange }) => {
   useEffect(() => {
     window.requestAIMoodChange = requestAIMoodChange
   }, [requestAIMoodChange])
+
+  // Component unmount'ta istekleri iptal et
+  useEffect(() => {
+    return () => {
+      aiService.cancelCurrentRequest()
+    }
+  }, [])
 
   return (
     <div className={styles.chatContainer}>
